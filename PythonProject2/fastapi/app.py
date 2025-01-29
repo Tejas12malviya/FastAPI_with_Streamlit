@@ -63,6 +63,54 @@ try:
 except requests.exceptions.RequestException as e:
     st.error(f"Error fetching students: {e}")
 
+import streamlit as st
+from sqlalchemy.orm import Session
+from models import Student
+import models
+from database import SessionLocal, engine
+
+# Initialize the database
+models.base.metadata.create_all(bind=engine)
+
+# Dependency for database session
+def get_db():
+    try:
+        db = SessionLocal()
+        yield db
+    finally:
+        db.close()
+
+def del_std_data(roll_number, db):
+    """
+    Deletes a student record by roll number.
+
+    Args:
+        roll_number (int): The roll number of the student to delete.
+        db (Session): The database session.
+
+    Returns:
+        bool: True if the student is deleted successfully, False otherwise.
+    """
+    std = db.query(Student).filter(Student.roll_no == roll_number).first()
+    if not std:
+        return False
+
+    db.delete(std)
+    db.commit()
+    return True
+
+
+st.title("Delete Student")
+
+roll_number = st.text_input("Enter Roll Number:")
+
+if st.button("Delete Student"):
+    with SessionLocal() as db:
+        if del_std_data(int(roll_number), db):
+            st.success("Student deleted successfully!")
+        else:
+            st.error("Student not found.")
+
 
 
 
